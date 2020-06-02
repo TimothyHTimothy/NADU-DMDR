@@ -73,4 +73,4 @@ Our result: **avoidance of blockwise artifact and strange over-sharpening.**
 
 
 
-For more comparison. please refer to the folders *Baseline Results* and *Our results*.
+For more comparison. please refer to the folders *Baseline Results* and *my Method results*.
