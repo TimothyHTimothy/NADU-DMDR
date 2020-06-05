@@ -51,7 +51,43 @@ If there are any problem, welcome to contact be at realtimothyhwu@gmail.com and 
 
 
 
+The following are the picture results of the proposed method and my modification.
 
+
+
+## Qualitative Results on Baseline
+
+### DSGAN Result
+
+The following image may show that the DSGAN can finish the task well.
+
+![image-20200601201833717](image-20200601201828430.png)
+
+The left, middle, right are reference 'Real-World' image, generated image of DSGAN and input. The generated high frequency texture distribution has reached very similar with the reference image.
+
+### Final SR Result
+
+In this subsection, we compare the final SR result with the ESRGAN, seeing that it eliminates nearly all the noises from the input while the ESRGAN is troubled much with noise artifact. ![image-20200601205119128](/Users/relbmageht/Desktop/NADU-DMDR/image-20200601205119128.png)
+
+
+
+
+
+## Modified Pipeline
+
+![my_mtd](my_mtd.png)
+
+The modified pipeline has similar qualitative results on the task above, and the result of modified pipeline will only be shown in **Generalization task** in the following part.
+
+## Generalization Result
+
+This is the generalization result from DPED TDSR to Gaussian.
+
+![image-20200602105808479](image-20200602105808479.png)
+
+![image-20200602105815208](image-20200602105815208.png)
+
+We can see the Guassian noises are nearly eliminated.
 
 ## Real Real-world Result
 
@@ -73,4 +109,4 @@ Our result: **avoidance of blockwise artifact and strange over-sharpening.**
 
 
 
-For more comparison. please refer to the folders *Baseline Results* and *my Method results*.
+For more comparison, please refer to the folders *Baseline Results* and *Our results* to see our modification's well generalization performance.
