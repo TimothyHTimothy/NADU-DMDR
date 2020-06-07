@@ -91,10 +91,7 @@ class DownsampleNet(nn.Module):
             self.conv_last = nn.Conv2d(nf, out_nc, 3, 2, 1, bias=True) 
         else:
             self.conv_last = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
-
         self.lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
-
-
         mutil.initialize_weights([self.conv_first, self.conv_last], 0.1)
 
     def forward(self, x):
@@ -105,7 +102,7 @@ class DownsampleNet(nn.Module):
         out += fea
 
         out = self.conv_last(self.lrelu(self.LR_conv(out)))
-        # out += F.interpolate(x, scale_factor = 1 / downscale, mode = 'bilinear')
+        out += F.interpolate(x, scale_factor = 1 / self.downscale, mode = 'bicubic')
         return out
 
 

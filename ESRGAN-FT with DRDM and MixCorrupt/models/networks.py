@@ -26,6 +26,8 @@ def define_Gene(opt):
                                  need_ca=opt_g['need_ca'], need_dense=opt_g['need_dense'], reduction=opt_g['red'])
     return netGene
 
+
+
 ####################
 #### Generator
 
@@ -47,15 +49,8 @@ def define_G(opt):
 
 def define_DS(opt):
     opt_net = opt['network_G']
-    which_model = opt_net['which_model_G']
-
-    if which_model == 'MSRResNet':
-        netDS = SRResNet_arch.DownsampleNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
+    netDS = SRResNet_arch.DownsampleNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
                                        nf=opt_net['nf'], nb=opt_net['nb'],  downscale=opt_net['scale'])
-    # elif which_model == 'sft_arch':  # SFT-GAN
-    #     netG = sft_arch.SFT_Net()
-    else:
-        raise NotImplementedError('Generator model [{:s}] not recognized'.format(which_model))
     return netDS
 
 

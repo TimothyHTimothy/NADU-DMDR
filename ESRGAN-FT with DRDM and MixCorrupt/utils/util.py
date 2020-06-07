@@ -44,6 +44,7 @@ def get_timestamp():
 
 
 def mkdir(path):
+    print(path)
     if not os.path.exists(path):
         os.makedirs(path)
 

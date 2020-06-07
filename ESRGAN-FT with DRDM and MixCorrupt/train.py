@@ -63,10 +63,11 @@ def main():
     #### mkdir and loggers
     if rank <= 0:  # normal training (rank -1) OR distributed training (rank 0)
         if resume_state is None:
+            print(opt['path'])
             util.mkdir_and_rename(
                 opt['path']['experiments_root'])  # rename experiment folder if exists
             util.mkdirs((path for key, path in opt['path'].items() if not key == 'experiments_root'
-                         and 'pretrain_model' not in key and 'resume' not in key))
+                         and 'pretrain_model' not in key and 'resume' not in key and path is not None))
 
         # config loggers. Before it, the log will not work
         util.setup_logger('base', opt['path']['log'], 'train_' + opt['name'], level=logging.INFO,
@@ -169,7 +170,7 @@ def main():
         for bus, train_data in enumerate(train_bar):
 
              # validation
-            if epoch % opt['train']['val_freq'] == 0 and bus == 0 and epoch != 0 and rank <= 0:
+            if epoch % opt['train']['val_freq'] == 0 and bus == 0 and rank <= 0:
                 avg_psnr = avg_psnr_n = val_pix_err_f = val_pix_err_nf = val_mean_color_err = 0.0
                 print("into validation!")
                 idx = 0

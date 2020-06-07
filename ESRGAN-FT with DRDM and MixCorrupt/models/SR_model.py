@@ -1,8 +1,11 @@
 import logging
 from collections import OrderedDict
 
+import random
+
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 import models.networks as networks
 import models.lr_scheduler as lr_scheduler
@@ -24,16 +27,25 @@ class SRModel(BaseModel):
 
         # define network and load pretrained models
         self.netG = networks.define_G(opt).to(self.device)
+        self.netDual = networks.define_DS(opt).to(self.device)
+        
         if opt['dist']:
             self.netG = DistributedDataParallel(self.netG, device_ids=[torch.cuda.current_device()])
         else:
             self.netG = DataParallel(self.netG)
+            
+        if opt['dist']:
+            self.netDual = DistributedDataParallel(self.netDual, device_ids=[torch.cuda.current_device()])
+        else:
+            self.netDual = DataParallel(self.netDual)
+            
         # print network
         self.print_network()
         self.load()
 
         if self.is_train:
             self.netG.train()
+            self.netDual.train()
 
             # loss
             loss_type = train_opt['pixel_criterion']
@@ -46,6 +58,7 @@ class SRModel(BaseModel):
             else:
                 raise NotImplementedError('Loss type [{:s}] is not recognized.'.format(loss_type))
             self.l_pix_w = train_opt['pixel_weight']
+            self.l_dual_w = train_opt['dual_weight']
 
             # optimizers
             wd_G = train_opt['weight_decay_G'] if train_opt['weight_decay_G'] else 0
@@ -56,6 +69,10 @@ class SRModel(BaseModel):
                 else:
                     if self.rank <= 0:
                         logger.warning('Params [{:s}] will not optimize.'.format(k))
+                        
+            for v in self.netDual.parameters():
+                optim_params.append(v)
+            
             self.optimizer_G = torch.optim.Adam(optim_params, lr=train_opt['lr_G'],
                                                 weight_decay=wd_G,
                                                 betas=(train_opt['beta1'], train_opt['beta2']))
@@ -84,13 +101,32 @@ class SRModel(BaseModel):
     def feed_data(self, data, need_GT=True):
         self.var_L = data['LQ'].to(self.device)  # LQ
         if need_GT:
-            self.real_H = data['GT'].to(self.device)  # GT
+            if data['GT'] is not None:
+                self.real_H = data['GT'].to(self.device)  # GT           
 
     def optimize_parameters(self, step):
+        
+        if self.opt['MixCorrupt']:
+            mode = random.choice(['bicubic', 'bilinear', 'nearest'])
+            self.ref_L = F.interpolate(self.real_H, 1 / self.opt['scale'], mode=mode).detach()
+            _, _, h,w = self.var_L.shape
+            rnd_h = random.randrange(h - h // 3)
+            rnd_w = random.randrange(w - w // 3)
+            self.var_L[:,:,rnd_h:rnd_h+h//3,rnd_w:rnd_w+w//3] = self.ref_L[:,:,rnd_h:rnd_h+h//2,rnd_w:rnd_w+w//2]
+            self.var_L = self.var_L.detach()
+            
         self.optimizer_G.zero_grad()
         self.fake_H = self.netG(self.var_L)
+        self.dual_L = self.netDual(self.fake_H)
         l_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
-        l_pix.backward()
+        
+        l_total = l_pix
+        
+        if self.l_dual_w > 0:
+            l_dual = self.l_dual_w * self.cri_pix(self.dual_L, self.var_L)
+            l_total += l_dual
+            
+        l_total.backward()
         self.optimizer_G.step()
 
         # set log
@@ -168,3 +204,5 @@ class SRModel(BaseModel):
 
     def save(self, iter_label):
         self.save_network(self.netG, 'G', iter_label)
+    def clear_data(self):
+        return None

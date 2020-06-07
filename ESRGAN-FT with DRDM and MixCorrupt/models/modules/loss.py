@@ -7,7 +7,7 @@ from torch import nn
 from torchvision.models.vgg import vgg16, vgg19
 from models.ds_model import FilterLow
 import sys
-from models.PerceptualSimilarity import models
+#from models.PerceptualSimilarity import models
 
 
 def generator_loss(labels, wasserstein=False, weights=None):
@@ -86,14 +86,6 @@ class GeneratorLoss(nn.Module):
         return self.pixel_loss(x.view(x.size(0), -1).mean(1), y.view(y.size(0), -1).mean(1))
 
 
-class PerceptualLossLPIPS(nn.Module):
-    def __init__(self):
-        super(PerceptualLossLPIPS, self).__init__()
-        self.loss_network = models.PerceptualLoss(use_gpu=torch.cuda.is_available())
-
-    def forward(self, x, y):
-        return self.loss_network.forward(x, y, normalize=True).mean()
-
 
 class PerceptualLossVGG16(nn.Module):
     def __init__(self):
@@ -124,27 +116,6 @@ class PerceptualLossVGG19(nn.Module):
     def forward(self, x, y):
         return self.mse_loss(self.loss_network(x), self.loss_network(y))
 
-
-class PerceptualLoss(nn.Module):
-    def __init__(self, rotations=False, flips=False):
-        super(PerceptualLoss, self).__init__()
-        self.loss = PerceptualLossLPIPS()
-        self.rotations = rotations
-        self.flips = flips
-
-    def forward(self, x, y):
-        if self.rotations:
-            k_rot = random.choice([-1, 0, 1])
-            x = torch.rot90(x, k_rot, [2, 3])
-            y = torch.rot90(y, k_rot, [2, 3])
-        if self.flips:
-            if random.choice([True, False]):
-                x = torch.flip(x, (2,))
-                y = torch.flip(y, (2,))
-            if random.choice([True, False]):
-                x = torch.flip(x, (3,))
-                y = torch.flip(y, (3,))
-        return self.loss(x, y)
 
 
 class CharbonnierLoss(nn.Module):

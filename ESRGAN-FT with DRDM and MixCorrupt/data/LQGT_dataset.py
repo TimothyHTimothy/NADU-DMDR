@@ -28,11 +28,20 @@ class LQGTDataset(data.Dataset):
             self.paths_NF, self.sizes_NF = util.get_image_paths(self.data_type, opt['dataroot_NF'])
         assert self.paths_GT, 'Error: GT path is empty.'
         if self.paths_LQ and self.paths_GT:
+            self.paths_nLQ = []
+            if len(self.paths_LQ) != len(self.paths_GT):
+                for ele in self.paths_LQ:
+                    if '/home/whn/Train/HR/' + ele[19:25] + '_HR.png' in self.paths_GT:
+                        self.paths_nLQ.append(ele)
+                self.paths_LQ = self.paths_nLQ
             assert len(self.paths_LQ) == len(
                 self.paths_GT
             ), 'GT and LQ datasets have different number of images - {}, {}.'.format(
                 len(self.paths_LQ), len(self.paths_GT))
+        self.paths_LQ = sorted(self.paths_LQ)
+        self.paths_GT = sorted(self.paths_GT)
         self.random_scale_list = [1]
+        
 
     def _init_lmdb(self):
         # https://github.com/chainer/chainermn/issues/129
@@ -107,7 +116,6 @@ class LQGTDataset(data.Dataset):
         if True: #self.opt['phase'] == 'train':
             # if the image size is too small
             H, W, _ = img_GT.shape
-            #print(GT_size)
             if H < GT_size or W < GT_size:
                 img_GT = cv2.resize(np.copy(img_GT), (GT_size, GT_size),
                                     interpolation=cv2.INTER_LINEAR)
@@ -119,7 +127,7 @@ class LQGTDataset(data.Dataset):
             H, W, C = img_LQ.shape
             H_, W_, C_ = img_NF.shape
             LQ_size = GT_size // scale
-
+            
             # randomly crop
             rnd_h = random.randint(0, max(0, H - LQ_size))
             rnd_w = random.randint(0, max(0, W - LQ_size))
@@ -131,8 +139,7 @@ class LQGTDataset(data.Dataset):
             img_GT = img_GT[rnd_h_GT:rnd_h_GT + GT_size, rnd_w_GT:rnd_w_GT + GT_size, :]
             # augmentation - flip, rotate
             img_LQ, img_GT, img_NF = util.augment([img_LQ, img_GT, img_NF], self.opt['use_flip'],
-                                          self.opt['use_rot'])
-
+                                          self.opt['use_rot'])                   
         # change color space if necessary
         if self.opt['color']:
             img_LQ = util.channel_convert(C, self.opt['color'],
@@ -147,6 +154,7 @@ class LQGTDataset(data.Dataset):
         img_GT = torch.from_numpy(np.ascontiguousarray(np.transpose(img_GT, (2, 0, 1)))).float()
         img_LQ = torch.from_numpy(np.ascontiguousarray(np.transpose(img_LQ, (2, 0, 1)))).float()
         img_NF = torch.from_numpy(np.ascontiguousarray(np.transpose(img_NF, (2, 0, 1)))).float()
+        
 
         if LQ_path is None:
             LQ_path = GT_path
