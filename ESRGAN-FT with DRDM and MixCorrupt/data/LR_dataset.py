@@ -34,10 +34,10 @@ class LRDataset(data.Dataset):
         if img_LR.shape[2] == 3:
             img_LR = img_LR[:, :, [2, 1, 0]]
         img_LR = torch.from_numpy(np.ascontiguousarray(np.transpose(img_LR, (2, 0, 1)))).float()
-        print(self.opt['size'])
-        img_LR = TF.to_pil_image(img_LR)
-        img_LR = T.CenterCrop(self.opt['size'])(img_LR)
-        img_LR = TF.to_tensor(img_LR)
+        if self.opt['size'] is not None:
+            img_LR = TF.to_pil_image(img_LR)
+            img_LR = T.CenterCrop(self.opt['size'])(img_LR)
+            img_LR = TF.to_tensor(img_LR)
         return {'LQ': img_LR, 'LQ_path': LR_path}
 
     def __len__(self):

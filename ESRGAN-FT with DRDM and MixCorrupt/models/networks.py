@@ -4,6 +4,7 @@ import logging
 import models.modules.SRResNet_arch as SRResNet_arch
 import models.modules.discriminator_vgg_arch as SRGAN_arch
 import models.modules.RRDBNet_arch as RRDBNet_arch
+import models.modules.RCAN_arch as RCAN_arch
 logger = logging.getLogger('base')
 
 
@@ -38,9 +39,14 @@ def define_G(opt):
     if which_model == 'MSRResNet':
         netG = SRResNet_arch.UpsampleNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
                                        nf=opt_net['nf'], nb=opt_net['nb'], nu=opt_net['nu'], upscale=opt_net['scale'])
+    elif which_model == 'RCAN':
+        netG = RCAN_arch.RCAN(opt_net)
     elif which_model == 'RRDBNet':
         netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
-                                    nf=opt_net['nf'], nb=opt_net['nb'])
+                                    nf=opt_net['nf'], nb=opt_net['nb'], scale=opt_net['scale'])
+    elif which_model == 'MRRDBNet':
+        netG = RRDBNet_arch.RRDBNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
+                                    nf=opt_net['nf'], nb=opt_net['nb'], scale=opt_net['scale'])
     # elif which_model == 'sft_arch':  # SFT-GAN
     #     netG = sft_arch.SFT_Net()
     else:
@@ -50,7 +56,7 @@ def define_G(opt):
 def define_DS(opt):
     opt_net = opt['network_G']
     netDS = SRResNet_arch.DownsampleNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'],
-                                       nf=opt_net['nf'], nb=opt_net['nb'],  downscale=opt_net['scale'])
+                                       nf=opt_net['nf'], downscale=opt_net['scale'])
     return netDS
 
 

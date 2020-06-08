@@ -1,23 +1,29 @@
 #### general settings
-name: realSR_x3_model
+name: realSR_x3_model_RCAN
 use_tb_logger: true
 model: sr
 distortion: sr
 scale: 3
-Crop: false
 gpu_ids: [0,1]
 
+MixCorrupt: True
+
 #### datasets
+dataset:
+  test:
+    name: Validation_Test_x3
+    mode: LR
+    dataroot_LR: /disk/whn/AIM2020_real_SR/ValidationLR_x3
 datasets:
   train:
     name: DF2K_train 
     mode: LQGT    
-    dataroot_GT: /home/whn/Train/HR
-    dataroot_LQ: /home/whn/Train/LR
+    dataroot_GT: /disk/whn/AIM2020_real_SR/Train/HR
+    dataroot_LQ: /disk/whn/AIM2020_real_SR/Train/LR
 
     use_shuffle: true
     n_workers: 3  # per GPU
-    batch_size: 16
+    batch_size: 32
     GT_size: 192
     use_flip: true
     use_rot: true
@@ -25,37 +31,32 @@ datasets:
   val:
     name: DIV2K_val
     mode: LQGT
-    GT_size: 192
-    dataroot_GT: /home/whn/Valid/HR
-    dataroot_LQ: /home/whn/Valid/LR
+    GT_size: 384
+    dataroot_GT: /disk/whn/AIM2020_real_SR/Valid/HR
+    dataroot_LQ: /disk/whn/AIM2020_real_SR/Valid/LR
     
 #### network structures
-network_DS:
-  gene:
-    n_blocks: 4
-    n_groups: 2
-    scale: 3
-    need_ca: False
-    need_dense: False
-    red: 16
 network_G:
-  which_model_G: RRDBNet
   in_nc: 3
   out_nc: 3
+  which_model_G: RCAN
+  n_resgroups: 8
+  n_resblocks: 8
   nf: 64
-  nb: 23
-
+  kernel_size: 3
+  reduction: 16
+  scale: 3
 
 #### path
 path:
   dsgan_model: 
-  pretrain_model_G: 
+  pretrain_model_G: #../experiments/realSR_x3_model_RCAN/models/3457_G.pth #only for testing
   strict_load: true
   resume_state: # ../experiments/DF2K_jpeg_SDSR_model/training_state/45000.state
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_G: !!float 1e-4
+  lr_G: !!float 5e-5
   weight_decay_G: 0
   beta1: 0.9
   beta2: 0.999
@@ -71,7 +72,7 @@ train:
   use_filters: True
   pixel_criterion: l2
   pixel_weight: !!float 1
-  dual_weight: !!float 5e-3
+  dual_weight: !!float 1e-3
   feature_criterion: l1
   feature_weight: 1
   gan_type: ragan  # gan | ragan

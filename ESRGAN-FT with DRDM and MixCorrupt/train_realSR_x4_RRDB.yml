@@ -1,5 +1,5 @@
 #### general settings
-name: DF2K_jpeg_SDSR
+name: realSR_x4_model_RRDB
 use_tb_logger: true
 model: sr
 distortion: sr
@@ -7,34 +7,36 @@ scale: 4
 Crop: false
 gpu_ids: [0,1]
 
+MixCorrupt: True
+
 #### datasets
 datasets:
   train:
     name: DF2K_train 
     mode: LQGT    
-    dataroot_GT: /home/whn/RCAN/X4/Train/HR
-    dataroot_LQ: /home/whn/RCAN/X4/Train/LR
+    dataroot_GT: /disk/TrainHR
+    dataroot_LQ: /disk/TrainLR
 
     use_shuffle: true
     n_workers: 3  # per GPU
     batch_size: 16
-    GT_size: 128
+    GT_size: 256
     use_flip: true
     use_rot: true
     color: RGB
   val:
     name: DIV2K_val
     mode: LQGT
-    GT_size: 1024
-    dataroot_GT: /home/whn/RCAN/X4/Valid/HR
-    dataroot_LQ: /home/whn/RCAN/X4/Valid/LR
+    GT_size: 256
+    dataroot_GT: /disk/ValidHR
+    dataroot_LQ: /disk/ValidLR
     
 #### network structures
 network_DS:
   gene:
     n_blocks: 4
     n_groups: 2
-    scale: 1
+    scale: 4
     need_ca: False
     need_dense: False
     red: 16
@@ -57,12 +59,10 @@ path:
 train:
   lr_G: !!float 1e-4
   weight_decay_G: 0
-  beta1_G: 0.9
-  beta2_G: 0.999
+  beta1: 0.9
+  beta2: 0.999
   lr_D: !!float 1e-4
   weight_decay_D: 0
-  beta1_D: 0.9
-  beta2_D: 0.999
   lr_scheme: MultiStepLR
 
   niter: 51000
@@ -71,8 +71,9 @@ train:
   lr_gamma: 0.5
 
   use_filters: True
-  pixel_criterion: l1
-  pixel_weight: !!float 1e-2
+  pixel_criterion: l2
+  pixel_weight: !!float 1
+  dual_weight: !!float 0
   feature_criterion: l1
   feature_weight: 1
   gan_type: ragan  # gan | ragan
@@ -82,10 +83,11 @@ train:
   D_init_iters: 0
 
   manual_seed: 10
-  val_freq: 5
+  val_freq: 1
 
 #### logger
 logger:
   tb_freq: 10
   print_freq: 1
-  save_checkpoint_freq: 5
+  save_checkpoint_freq: 3
+

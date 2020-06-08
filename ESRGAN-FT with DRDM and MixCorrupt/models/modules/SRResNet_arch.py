@@ -7,7 +7,7 @@ import models.modules.module_util as mutil
 class UpsampleNet(nn.Module):
     ''' modified SRResNet'''
 
-    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=12, nu=3, upscale=4):
+    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=24, nu=3, upscale=4):
         super(UpsampleNet, self).__init__()
         self.upscale = upscale
 
@@ -76,6 +76,9 @@ class UpsampleNet(nn.Module):
         out_list.append(out)
         return out_list
 
+
+# for Dual Learning #
+    
 class DownsampleNet(nn.Module):
     def __init__(self, in_nc = 3, out_nc = 3, nf = 64, nb=4, downscale = 4):
         super(DownsampleNet, self).__init__()

@@ -26,24 +26,30 @@ class SRModel(BaseModel):
         train_opt = opt['train']
 
         # define network and load pretrained models
-        self.netG = networks.define_G(opt).to(self.device)
-        self.netDual = networks.define_DS(opt).to(self.device)
-        
+        self.netG = networks.define_G(opt).to(self.device)        
         if opt['dist']:
             self.netG = DistributedDataParallel(self.netG, device_ids=[torch.cuda.current_device()])
         else:
             self.netG = DataParallel(self.netG)
             
-        if opt['dist']:
-            self.netDual = DistributedDataParallel(self.netDual, device_ids=[torch.cuda.current_device()])
-        else:
-            self.netDual = DataParallel(self.netDual)
+        self.mix_corrupt = self.opt['MixCorrupt']
+        
+        logger.info('MixCorrupt Data Augmentation is set as {}'.format(self.mix_corrupt))
+
             
         # print network
         self.print_network()
         self.load()
+        print(self.is_train)
 
         if self.is_train:
+            print('wee')
+            self.netDual = networks.define_DS(opt).to(self.device)
+            if opt['dist']:
+                self.netDual = DistributedDataParallel(self.netDual, device_ids=[torch.cuda.current_device()])
+            else:
+                self.netDual = DataParallel(self.netDual)
+                
             self.netG.train()
             self.netDual.train()
 
@@ -106,13 +112,13 @@ class SRModel(BaseModel):
 
     def optimize_parameters(self, step):
         
-        if self.opt['MixCorrupt']:
+        if self.mix_corrupt:
             mode = random.choice(['bicubic', 'bilinear', 'nearest'])
-            self.ref_L = F.interpolate(self.real_H, 1 / self.opt['scale'], mode=mode).detach()
+            self.ref_L = F.interpolate(self.real_H, scale_factor = 1/self.opt['scale'], mode=mode).detach()
             _, _, h,w = self.var_L.shape
             rnd_h = random.randrange(h - h // 3)
             rnd_w = random.randrange(w - w // 3)
-            self.var_L[:,:,rnd_h:rnd_h+h//3,rnd_w:rnd_w+w//3] = self.ref_L[:,:,rnd_h:rnd_h+h//2,rnd_w:rnd_w+w//2]
+            self.var_L[:,:,rnd_h:rnd_h+h//3,rnd_w:rnd_w+w//3] = self.ref_L[:,:,rnd_h:rnd_h+h//3,rnd_w:rnd_w+w//3]
             self.var_L = self.var_L.detach()
             
         self.optimizer_G.zero_grad()
@@ -131,12 +137,18 @@ class SRModel(BaseModel):
 
         # set log
         self.log_dict['l_pix'] = l_pix.item()
+        
+        if self.l_dual_w > 0:
+            self.log_dict['l_dual'] = l_dual.item()
+        
 
     def test(self):
         self.netG.eval()
         with torch.no_grad():
             self.fake_H = self.netG(self.var_L)
         self.netG.train()
+    
+
 
     def test_x8(self):
         # from https://github.com/thstkdgus35/EDSR-PyTorch
@@ -183,6 +195,10 @@ class SRModel(BaseModel):
         out_dict['SR'] = self.fake_H.detach()[0].float().cpu()
         if need_GT:
             out_dict['GT'] = self.real_H.detach()[0].float().cpu()
+        self.var_L = None
+        self.fake_H = None
+        self.real_H = None
+        torch.cuda.empty_cache()
         return out_dict
 
     def print_network(self):

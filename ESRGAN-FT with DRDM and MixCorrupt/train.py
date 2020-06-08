@@ -170,8 +170,8 @@ def main():
         for bus, train_data in enumerate(train_bar):
 
              # validation
-            if epoch % opt['train']['val_freq'] == 0 and bus == 0 and rank <= 0:
-                avg_psnr = avg_psnr_n = val_pix_err_f = val_pix_err_nf = val_mean_color_err = 0.0
+            if epoch % opt['train']['val_freq'] == 0 and bus == 0 and rank <= 0 and epoch != 0:
+                avg_ssim = avg_psnr = avg_psnr_n = val_pix_err_f = val_pix_err_nf = val_mean_color_err = 0.0
                 print("into validation!")
                 idx = 0
                 val_bar = tqdm(val_loader, desc='[%d/%d]' % (epoch, total_epochs))
@@ -199,7 +199,7 @@ def main():
                     save_sr_img_path = os.path.join(img_dir,
                                                  '{:s}_{:d}_sr.png'.format(img_name, current_step))
                     save_nr_img_path = os.path.join(img_dir,
-                                                 '{:s}_{:d}_nr.png'.format(img_name, current_step))
+                                                 '{:s}_{:d}_lq.png'.format(img_name, current_step))
                     #save_nf_img_path = os.path.join(img_dir,
                                                 # 'bs_{:s}_{:d}_nr.png'.format(img_name, current_step)) 
                     #save_nh_img_path = os.path.join(img_dir,
@@ -212,16 +212,14 @@ def main():
 
                     #print("Saved")
                     # calculate PSNR
-                    crop_size = opt['scale']
                     gt_img = gt_img / 255.
                     sr_img = sr_img / 255.
                     #nf_img = nf_img / 255.
                     lq_img = lq_img / 255.
-                    cropped_sr_img = sr_img[crop_size:-crop_size, crop_size:-crop_size, :]
-                    cropped_gt_img = gt_img[crop_size:-crop_size, crop_size:-crop_size, :]
                     #cropped_lq_img = lq_img[crop_size:-crop_size, crop_size:-crop_size, :]
                     #cropped_nr_img = nr_img[crop_size:-crop_size, crop_size:-crop_size, :]
-                    avg_psnr += util.calculate_psnr(cropped_sr_img * 255, cropped_gt_img * 255)
+                    avg_psnr += util.calculate_psnr(sr_img * 255, gt_img * 255)
+                    avg_ssim += util.calculate_ssim(sr_img * 255, gt_img * 255)
                     #avg_psnr_n += util.calculate_psnr(cropped_lq_img * 255, cropped_nr_img * 255)
 
                     # ----------------------------------------- ADDED -----------------------------------------
@@ -232,6 +230,7 @@ def main():
                 
                 
                 avg_psnr = avg_psnr / idx
+                avg_ssim = avg_ssim / idx
                 #avg_psnr_n = avg_psnr_n / idx
                 val_pix_err_f /= idx
                 val_pix_err_nf /= idx
@@ -241,12 +240,14 @@ def main():
 
                 # log
                 logger.info('# Validation # PSNR: {:.4e}, {:.4e},'.format(avg_psnr, avg_psnr_n))
+                logger.info('# Validation # SSIM: {:.4e}'.format(avg_ssim))
                 logger_val = logging.getLogger('val')  # validation logger
                 logger_val.info('<epoch:{:3d}, iter:{:8,d}> psnr: {:.4e}'.format(
                     epoch, current_step, avg_psnr))
                 # tensorboard logger
                 if opt['use_tb_logger'] and 'debug' not in opt['name']:
                     tb_logger.add_scalar('val_psnr', avg_psnr, current_step)
+                    tb_logger.add_scalar('val_ssim', avg_ssim, current_step)
                     tb_logger.add_scalar('val_pix_err_f', val_pix_err_f, current_step)
                     tb_logger.add_scalar('val_pix_err_nf', val_pix_err_nf, current_step)
                     tb_logger.add_scalar('val_mean_color_err', val_mean_color_err, current_step)

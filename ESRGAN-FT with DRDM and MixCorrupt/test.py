@@ -18,7 +18,7 @@ opt = option.dict_to_nonedict(opt)
 
 util.mkdirs(
     (path for key, path in opt['path'].items()
-     if not key == 'experiments_root' and 'pretrain_model' not in key and 'resume' not in key))
+     if not key == 'experiments_root' and 'pretrain_model' not in key and 'resume' not in key and path is not None))
 util.setup_logger('base', opt['path']['log'], 'test_' + opt['name'], level=logging.INFO,
                   screen=True, tofile=True)
 logger = logging.getLogger('base')
@@ -51,8 +51,9 @@ for test_loader in test_loaders:
         model.feed_data(data, need_GT=need_GT)
         img_path = data['GT_path'][0] if need_GT else data['LQ_path'][0]
         img_name = osp.splitext(osp.basename(img_path))[0]
-
+                
         model.test()
+        print('ok')
         visuals = model.get_current_visuals(need_GT=need_GT)
 
         sr_img = util.tensor2img(visuals['SR'])  # uint8
@@ -64,7 +65,6 @@ for test_loader in test_loaders:
         else:
             save_img_path = osp.join(dataset_dir, img_name + '.png')
         util.save_img(sr_img, save_img_path)
-        print(save_img_path)
 
         # calculate PSNR and SSIM
         if need_GT:
