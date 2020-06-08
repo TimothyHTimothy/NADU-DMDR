@@ -5,7 +5,7 @@
 
 *This repository is also for multi-task training for AIM2020 (Advances in Image Manipulation) and the modified framework and yaml file is uploaded here:*
 
-*If you train as follows, the result won't be so good but it may help to learn about what this track (real-SR) if you would like to join us in this competition team.*
+*If you train as follows, the result won't be so good but it may help to learn about what this track (real-SR) is for if you would like to join us in this competition team.*
 
 For understanding the pipeline, please follow the codes for re-implementing the codes.
 
