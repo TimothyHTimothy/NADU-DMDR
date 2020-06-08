@@ -1,5 +1,29 @@
 # DRDM-Net
 
+
+## Important Issue!!
+
+*This repository is also for multi-task training for AIM2020 (Advances in Image Manipulation) and the modified framework and yaml file is uploaded here:*
+
+Please follow the codes for re-implementing the codes......(well they might be not so effective in this version).
+
+```shell
+cd ESRGAN-FT with DRDM and MixCorrupt
+python3 train.py -opt train_realSR_x3_RRDB.yml
+```
+
+or 
+
+```shell
+python3 train.py -opt train_realSR_x4_RRDB.yml
+```
+
+for 4x tasks.
+
+*Remember to prepare the dataset on your own.*
+
+
+
 From baseline model: [ICCVW 2019] PyTorch implementation of DSGAN and ESRGAN-FS from the paper "Frequency Separation for Real-World Super-Resolution". This code was the winning solution of the AIM challenge on Real-World Super-Resolution at ICCV 2019
 
 Made some modifications on it for research and course (the CoSRGAN method and MSRResNet are modifications on research(unfinished) and can be ignored if you are the TA of Computational Photography)
